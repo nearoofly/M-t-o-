@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi des Tempêtes et Météo en Direct</title>
+    
+    <!-- Leaflet CSS pour la carte -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-choropleth@0.2.0/dist/choropleth.css" />
+
+    <!-- Styles -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #87CEEB, #4682B4);
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            margin: 20px 0;
+        }
+        #map, #weatherMap {
+            height: 500px;
+            width: 90%;
+            margin: auto;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+        }
+        #alertes {
+            margin: 20px;
+            padding: 10px;
+            font-weight: bold;
+            background: rgba(255, 69, 0, 0.8);
+            display: none;
+            border-radius: 5px;
+        }
+        #regions {
+            margin-top: 20px;
+        }
+        .region {
+            margin: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        footer {
+            background: #333;
+            color: white;
+            padding: 20px;
+            font-size: 14px;
+        }
+        footer .social-links {
+            margin: 10px 0;
+        }
+        footer .social-links a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: white;
+            font-size: 20px;
+        }
+        footer .social-links img {
+            width: 25px;
+            height: auto;
+        }
+        footer .legal-links {
+            margin-top: 20px;
+        }
+        footer .legal-links a {
+            text-decoration: none;
+            color: white;
+            margin: 0 10px;
+        }
+        #search-box {
+            margin: 20px auto;
+            padding: 10px;
+            width: 70%;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        #search-button {
+            padding: 10px 20px;
+            background-color: #4682B4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #search-button:hover {
+            background-color: #315f72;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Suivi des Tempêtes et Météo en Direct</h1>
+
+    <!-- Barre de recherche -->
+    <input type="text" id="search-box" placeholder="Entrez une ville ou un pays...">
+    <button id="search-button">Rechercher</button>
+
+    <div id="alertes">⚠️ Alerte météo en cours !</div>
+
+    <!-- Première carte - Carte des régions -->
+    <div id="map"></div>
+
+    <!-- Liste des régions -->
+    <div id="regions"></div>
+
+    <!-- Deuxième carte - Carte météo en direct -->
+    <div id="weatherMap"></div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 - Suivi des Tempêtes | Tous droits réservés</p>
+        
+        
+
+
+
+
+
+<!-- Social Links (Drapeaux avec Emojis) -->
+<div class="social-links">
+    <!-- Union Européenne (Europe) -->
+    <a href="#">🇪🇺 Europe</a>
+    
+    <!-- États-Unis (Amérique) -->
+    <a href="#">🇺🇸 Amérique</a>
+    
+    <!-- Drapeau de l'ONU pour Asie / Monde -->
+    <a href="#">🌏 Asie/Monde</a>
+</div>
+
+
+
+
+
+
+<!-- Section pour faire un don -->
+<div class="donate-section" style="text-align: center; margin-top: 20px;">
+    <h2>Make a Donate!</h2>
+    <!-- Bouton PayPal -->
+    <a href="https://www.paypal.com/donate?hosted_button_id=ZKUT7SY5QACU2" target="_blank">
+        <img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" alt="Donate with PayPal">
+    </a>
+</div>
+
+
+
+
+
+        
+        <!-- Legal Links -->
+        <div class="legal-links">
+            <a href="#">Politique de confidentialité</a>
+            <a href="#">Politique de cookies</a>
+            <a href="#">Mentions légales</a>
+        </div>
+    </footer>
+
+    <!-- Leaflet JS pour la carte -->
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-choropleth@0.2.0/dist/choropleth.js"></script>
+
+
+
+
+
+
+
+
+    <script>
+        // API OpenWeatherMap avec ta clé
+        const apiKey = "ba069dd983ac946504cefb53f6f75779"; // Ta clé API OpenWeatherMap
+
+        // Liste des villes initiales
+        const initialCities = [
+            { name: "Paris", lat: 48.8566, lon: 2.3522 },
+            { name: "New York", lat: 40.7128, lon: -74.0060 },
+            { name: "Tokyo", lat: 35.6762, lon: 139.6503 },
+            { name: "Sydney", lat: -33.8688, lon: 151.2093 },
+            { name: "London", lat: 51.5074, lon: -0.1278 }
+        ];
+
+        // Initialisation des cartes
+        var map = L.map('map').setView([48.8566, 2.3522], 6); // Centré sur la France
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        var weatherMap = L.map('weatherMap').setView([48.8566, 2.3522], 6); // Centré sur la France
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(weatherMap);
+
+        // Fonction pour charger la météo de n'importe quelle ville
+        function chargerMeteo(city) {
+            // Récupération des informations météorologiques via l'API OpenWeatherMap
+            fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric&lang=fr`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.cod === '404') {
+                        alert("Ville non trouvée !");
+                        return;
+                    }
+                    let meteo = data.weather[0].description;
+                    let temp = data.main.temp;
+                    let vent = data.wind.speed;
+                    let pluie = data.rain ? data.rain["1h"] : 0; // Pluie en 1 heure
+                    let nuages = data.clouds.all;
+                    let icone = `http://openweathermap.org/img/wn/${data.weather[0].icon}.png`;
+                    let lat = data.coord.lat;
+                    let lon = data.coord.lon;
+
+                    // Affichage de la météo dans la carte
+                    var marker = L.marker([lat, lon]).addTo(map)
+                        .bindPopup(`
+                            <b>${city}</b><br>
+                            <img src="${icone}" alt="Météo"><br>
+                            🌡 Température: ${temp}°C<br>
+                            💨 Vent: ${vent} m/s<br>
+                            ☁️ Nuages: ${nuages}%<br>
+                            🌧️ Pluie: ${pluie ? pluie + " mm" : "Pas de pluie"}<br>
+                            ${meteo}
+                        `);
+
+                    // Centrer la carte sur la ville
+                    map.setView([lat, lon], 10);
+
+                    // Carte météo en direct
+                    L.circle([lat, lon], {
+                        color: (vent > 10) ? 'red' : 'green', // Rouge pour vents forts
+                        fillColor: (pluie > 0) ? 'blue' : 'white', // Bleu si pluie
+                        fillOpacity: 0.5,
+                        radius: 10000
+                    }).addTo(weatherMap);
+                })
+                .catch(error => {
+                    alert("Erreur lors de la récupération des données météorologiques");
+                });
+        }
+
+        // Affichage des villes initiales
+        initialCities.forEach(city => {
+            chargerMeteo(city.name);
+        });
+
+        // Événement lors du clic sur le bouton de recherche
+        document.getElementById('search-button').addEventListener('click', function () {
+            var city = document.getElementById('search-box').value;
+            if (city) {
+                chargerMeteo(city);
+            } else {
+                alert("Veuillez entrer une ville !");
+            }
+        });
+    </script>
+</body>
+</html>
