@@ -95,33 +95,6 @@
             background-color: #315f72;
         }
     </style>
-
-
-
-
-
-
-    
-    <script src="https://cesium.com/downloads/cesiumjs/releases/1.94/Build/Cesium/Cesium.js"></script>
-    <link href="https://cesium.com/downloads/cesiumjs/releases/1.94/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-    <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; }
-        #cesiumContainer { width: 100%; height: 100vh; display: none; }
-        #errorMessage { 
-            display: none; 
-            position: absolute; 
-            top: 50%; left: 50%; 
-            transform: translate(-50%, -50%); 
-            background: rgba(0, 0, 0, 0.8); 
-            color: white; 
-            padding: 20px; 
-            border-radius: 10px; 
-            font-family: Arial, sans-serif; 
-            text-align: center; 
-        }
-    </style>
-
-
     
 </head>
 <body>
@@ -142,211 +115,11 @@
 
     <!-- Deuxième carte - Carte météo en direct -->
     <div id="weatherMap"></div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-<body>
-    <div id="cesiumContainer"></div>
-    <div id="errorMessage">⚠️ WebGL n'est pas supporté sur votre navigateur. Veuillez essayer un autre navigateur comme Chrome ou Firefox.</div>
-
-    <script>
-        function isWebGLAvailable() {
-            try {
-                const canvas = document.createElement("canvas");
-                return !!window.WebGLRenderingContext && (
-                    canvas.getContext("webgl") || canvas.getContext("experimental-webgl")
-                );
-            } catch (e) {
-                return false;
-            }
-        }
-
-        if (isWebGLAvailable()) {
-            document.getElementById("cesiumContainer").style.display = "block";
-
-            Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhY2Y2ODc1My1hZmQ3LTRmNWUtYmRmNC1hMmE2NGFjZTQxZGMiLCJpZCI6Mjc2MDkyLCJpYXQiOjE3Mzk1NTI0ODZ9.H_AEmV0aw0gIcScku5Aw4JNtkix9GUdUG8QZ3Fo0XrI';
-
-            const viewer = new Cesium.Viewer('cesiumContainer', {
-                terrainProvider: Cesium.createWorldTerrain()
-            });
-
-            // Ajout des routes OpenStreetMap
-            viewer.imageryLayers.addImageryProvider(new Cesium.OpenStreetMapImageryProvider({
-                url: 'https://a.tile.openstreetmap.org/'
-            }));
-
-            // Points de passage (itinéraire)
-            const waypoints = [
-                { lat: -33.9249, lon: 18.4241, name: "Cape Town" },
-                { lat: 15.5007, lon: 32.5599, name: "Khartoum" },
-                { lat: 30.0444, lon: 31.2357, name: "Caire" },
-                { lat: 39.9334, lon: 32.8597, name: "Ankara" },
-                { lat: 55.7558, lon: 37.6173, name: "Moscou" },
-                { lat: 59.9343, lon: 30.3351, name: "Saint-Pétersbourg" },
-                { lat: 62.0321, lon: 129.7207, name: "Iakoutsk" },
-                { lat: 59.568, lon: 150.8035, name: "Magadan" }
-            ];
-
-            waypoints.forEach(point => {
-                viewer.entities.add({
-                    position: Cesium.Cartesian3.fromDegrees(point.lon, point.lat),
-                    point: { pixelSize: 10, color: Cesium.Color.RED },
-                    label: { text: point.name, font: '14px sans-serif', fillColor: Cesium.Color.WHITE }
-                });
-            });
-
-            // Tracé de l'itinéraire
-            viewer.entities.add({
-                polyline: {
-                    positions: waypoints.map(p => Cesium.Cartesian3.fromDegrees(p.lon, p.lat)),
-                    width: 4,
-                    material: Cesium.Color.YELLOW
-                }
-            });
-
-            // Charger la météo du premier point
-            async function loadWeather(lat, lon) {
-                const apiKey = "ba069dd983ac946504cefb53f6f75779";
-                const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
-                try {
-                    const response = await fetch(url);
-                    const data = await response.json();
-                    console.log(`Météo : ${data.weather[0].description}, Temp: ${data.main.temp}°C`);
-                } catch (error) {
-                    console.error("Erreur météo", error);
-                }
-            }
-
-            loadWeather(waypoints[0].lat, waypoints[0].lon);
-
-            // Suivi des avions (simulation avec Flightradar24)
-            async function loadFlights() {
-                const url = "https://data-cloud.flightradar24.com/zones/fcgi/feed.js?bounds=90,-90,-180,180";
-                try {
-                    const response = await fetch(url);
-                    const data = await response.json();
-                    Object.values(data).forEach(flight => {
-                        if (Array.isArray(flight)) {
-                            const [lat, lon, , , , , , , callsign] = flight;
-                            viewer.entities.add({
-                                position: Cesium.Cartesian3.fromDegrees(lon, lat),
-                                point: { pixelSize: 5, color: Cesium.Color.BLUE },
-                                label: { text: callsign, font: '12px sans-serif', fillColor: Cesium.Color.CYAN }
-                            });
-                        }
-                    });
-                } catch (error) {
-                    console.error("Erreur chargement avions", error);
-                }
-            }
-
-            loadFlights();
-
-            // Mise à jour météo et vols toutes les 10 minutes
-            setInterval(() => {
-                loadWeather(waypoints[0].lat, waypoints[0].lon);
-                loadFlights();
-            }, 600000);
-
-        } else {
-            document.getElementById("errorMessage").style.display = "block";
-        }
- </script>
-
-
-
-
-
-
-
-
-
-
- <script>
-
-async function loadFlights() {
-    try {
-        const response = await fetch("https://adsbexchange-com1.p.rapidapi.com/v2/lat/48.8566/lon/2.3522/dist/500/");
-        const data = await response.json();
-
-        if (!data.ac || data.ac.length === 0) {
-            console.error("Aucun avion trouvé !");
-            return;
-        }
-
-        viewer.entities.removeAll();
-
-        data.ac.forEach(flight => {
-            const lat = flight.lat;
-            const lon = flight.lon;
-            const callsign = flight.callsign || "Inconnu";
-
-            if (lat && lon) {
-                viewer.entities.add({
-                    position: Cesium.Cartesian3.fromDegrees(lon, lat, flight.alt_baro || 10000),
-                    point: { pixelSize: 8, color: Cesium.Color.BLUE },
-                    label: { text: callsign, font: "12px sans-serif", fillColor: Cesium.Color.WHITE }
-                });
-                console.log("Avion ajouté :", callsign, lat, lon);
-            }
-        });
-    } catch (error) {
-        console.error("Erreur lors du chargement des avions :", error);
-    }
-}
-
-loadFlights();
-setInterval(loadFlights, 30000);
-
-        
-    </script>
-</body>
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
     
     <!-- Footer -->
     <footer>
         <p>&copy; 2025 - Suivi des Tempêtes | Tous droits réservés</p>
         
-        
-
-
-
-
-
 <!-- Social Links (Drapeaux avec Emojis) -->
 <div class="social-links">
     <!-- Union Européenne (Europe) -->
@@ -373,11 +146,6 @@ setInterval(loadFlights, 30000);
     </a>
 </div>
 
-
-
-
-
-        
         <!-- Legal Links -->
         <div class="legal-links">
             <a href="#">Politique de confidentialité</a>
@@ -389,12 +157,6 @@ setInterval(loadFlights, 30000);
     <!-- Leaflet JS pour la carte -->
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-choropleth@0.2.0/dist/choropleth.js"></script>
-
-
-
-
-
-
 
 
     <script>
